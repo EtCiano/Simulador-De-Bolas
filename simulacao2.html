@@ -23,21 +23,12 @@
             left: 10px;
             margin-right: 10px;
         }
-        input {
-            position: relative;
-            top: 10px;
-            left: 10px;
-            margin-right: 10px;
-            width: 220px;
-        }
     </style>
 </head>
 <body>
     <section>
         <button id="stop">parar</button>
         <button id="reset">resetar</button>
-        <input type="number" id="quantidade" placeholder="Insira a quantidade de elementos">
-        <button id="adicionar">adicionar</button>
     </section>
     <canvas id="canvas"></canvas>
     <script>
@@ -45,128 +36,120 @@
         const resetButton = document.getElementById('reset');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const adicionarButton = document.getElementById('adicionar');
-        const quantidadeInput = document.getElementById('quantidade');
-        adicionarButton.addEventListener('click', () => {
-            const quantidade = parseInt(quantidadeInput.value);
-            for (let i = 0; i < quantidade; i++) {
-                elements.push({
-                    id: `elemento${elements.length + 1}`,
-                    color: `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`,
-                    center: { x: Math.random() * (canvas.width - 0) + 0, y: Math.random() * (canvas.height - 0) + 0 },
-                    direcao: Math.floor(Math.random() * 4),
-                    raio: 20
-                });
-            }
-            const interval = setInterval(draw, 1000 / 60);
-        });
         ctx.canvas.width  = window.innerWidth;
         ctx.canvas.height = window.innerHeight;
-        let elements = [];
-        function interagir(element1, element2) {
-            let dado1 = Math.floor(Math.random() * 20) + 1;
-            let dado2 = Math.floor(Math.random() * 20) + 1;
-            if (dado1 > dado2) {
-                console.log(element1.id, 'venceu a interação contra', element2.id);
-                elements = elements.filter(e => e !== element2);
-            } else if (dado2 > dado1) {
-                console.log(element2.id, 'venceu a interação contra', element1.id);
-                elements = elements.filter(e => e !== element1);
-            } else {
-                console.log('empate entre', element1.id, 'e', element2.id);
-            }
-        }
-        function draw(apenasAdicionar) {
-            const basespeed = 2.5
-            if (!apenasAdicionar) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
+        const inicialx1 = Math.random() * (canvas.width - 0) + 0;
+        const inicialy1 = Math.random() * (canvas.height - 0) + 0;
+        const inicialx2 = Math.random() * (canvas.width - 0) + 0;
+        const inicialy2 = Math.random() * (canvas.height - 0) + 0;
+        let elements = [
+            {
+                vertices: [
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1},
+                    { x: inicialx1, y: inicialy1}
+                ],
+                color: 'rgba(255, 0, 0, 0.5)',
+                centercalcx: [],
+                centercalcy: [],
+                center: { x: 0, y: 0 }
+                
+             },
+             {
+                vertices: [
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2},
+                    { x: inicialx2, y: inicialy2}
+                ],
+                color: 'rgba(0, 0, 255, 0.5)',
+                centercalcx: [],
+                centercalcy: [],
+                center: { x: 0, y: 0 }
+             }
+        ];
+        function draw() {
+            const basespeed = 5
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             elements.forEach(element => {
                 ctx.fillStyle = element.color;
                 ctx.strokeStyle = "white";
+                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.arc(element.center.x, element.center.y, element.raio, 0, Math.PI * 2);
+                ctx.moveTo(element.vertices[0].x, element.vertices[0].y);
+                for (let i = 1; i < element.vertices.length; i++) {
+                    ctx.lineTo(element.vertices[i].x, element.vertices[i].y);
+                }
+                ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
+                element.vertices.forEach(vertex => {
+                    ctx.beginPath();
+                    ctx.arc(vertex.x, vertex.y, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = "white";
+                    ctx.fill();
+                    ctx.closePath();
+                    if (vertex.x < element.center.x) {
+                        vertex.x -= Math.random() * (basespeed - -4) + -4;
+                    } else {
+                        vertex.x += Math.random() * (basespeed - -4) + -4;
+                    }
+                    if (vertex.y < element.center.y) {
+                        vertex.y -= Math.random() * (basespeed - -4) + -4;
+                    } else {
+                        vertex.y += Math.random() * (basespeed - -4) + -4;
+                    }
+                    if (vertex.x >= 0 || vertex.x <= canvas.width) {
+                        vertex.x = vertex.x;
+                    }
+                    if (vertex.y >= 0 || vertex.y <= canvas.height) {
+                        vertex.y = vertex.y;
+                    }
+                    element.centercalcx.push(vertex.x);
+                    element.centercalcy.push(vertex.y);
+                });
+                element.center.x = element.centercalcx.reduce((a, b) => a + b, 0) / element.centercalcx.length;
+                element.center.y = element.centercalcy.reduce((a, b) => a + b, 0) / element.centercalcy.length;
+                element.centercalcx = [];
+                element.centercalcy = [];
+                ctx.beginPath();
+                ctx.arc(element.center.x, element.center.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = "yellow";
+                ctx.fill();
                 ctx.closePath();
-                ctx.lineWidth = 5;
-                switch(element.direcao) {
-                    case 0:
-                        element.center.x -= basespeed;
-                        element.center.y -= basespeed;
-                        break;
-                    case 1:
-                        element.center.x += basespeed;
-                        element.center.y -= basespeed;
-                        break;
-                    case 2:
-                        element.center.y += basespeed;
-                        element.center.x -= basespeed;
-                        break;
-                    case 3:
-                        element.center.y += basespeed;
-                        element.center.x += basespeed;
-                        break;
-                }
-                if (element.center.x > canvas.width - element.raio) {
-                    if (element.direcao === 1) {
-                        element.direcao = 0;
-                    } else if (element.direcao === 3) {
-                        element.direcao = 2;
-                    }
-                }
-                if (element.center.x < element.raio) {
-                    if (element.direcao === 0) {
-                        element.direcao = 1;
-                    } else if (element.direcao === 2) {
-                        element.direcao = 3;
-                    }
-                }
-                if (element.center.y > canvas.height - element.raio) {
-                    if (element.direcao === 2) {
-                        element.direcao = 0;
-                    } else if (element.direcao === 3) {
-                        element.direcao = 1;
-                    }
-                }
-                if (element.center.y < element.raio) {
-                    if (element.direcao === 0) {
-                        element.direcao = 2;
-                    } else if (element.direcao === 1) {
-                        element.direcao = 3;
-                    }
-                }
-                let elementomaisproximo;
-                let elementosproximos = [];
-                for (let j = 0; j < elements.length; j++) {
-                    let elementopossivel = elements[j];
-                    if (elementopossivel === element) continue;
-                    const dx = element.center.x - elementopossivel.center.x;
-                    const dy = element.center.y - elementopossivel.center.y;
-                    elementosproximos.push({x: dx, y: dy, elemento: elementopossivel});
-                    if (elementosproximos.length === elements.length - 1) {
-                        for (let k = 0; k <= elements.length - 1; k++) {
-                            if (elements[k] === element) continue;
-                            const distancia = Math.sqrt((element.center.x - elements[k].center.x) ** 2 + (element.center.y - elements[k].center.y) ** 2);
-                            if (distancia <= element.raio + elements[k].raio) {
-                                interagir(element, elements[k]);
-                            }
-                        }
-                    }
-                }
             });
-            
         }
+        const interval = setInterval(draw, 1000 / 60);
         stopButton.addEventListener('click', () => {
             clearInterval(interval);
         });
         resetButton.addEventListener('click', () => {
-            elements = [];
+            elements.forEach(element => {
+                const inicialx = Math.random() * (canvas.width - 0) + 0;
+                const inicialy = Math.random() * (canvas.height - 0) + 0;
+                element.vertices.forEach(vertex => {
+                    vertex.x = inicialx;
+                    vertex.y = inicialy;
+                });
+            });
         });
-        if (elements.length === 1) {
-            clearInterval(interval);
-            console.log('Simulação encerrada. Elemento vencedor:', elements[0].id);
-        }
     </script>
 </body>
 </html>
