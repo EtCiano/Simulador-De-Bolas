@@ -1,155 +1,340 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>simulação</title>
+    <title>Simulação</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background-color: rgb(0, 0, 0);
-        }
-        canvas {
             box-sizing: border-box;
         }
-        section {
-            position: absolute;
-            z-index: 10;
+
+        body {
+            background-color: #000;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: Arial, sans-serif;
         }
-        button {
-            position: relative;
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .controls {
+            position: fixed;
             top: 10px;
             left: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .rules-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: 0;
+            background-color: white;
+            color: black;
+            transition: width 0.3s ease;
+            overflow: hidden;
+            z-index: 10;
+            padding: 0;
+        }
+
+        .rules-panel.open {
+            width: 350px;
+            padding: 20px;
+        }
+
+        button, input[type="number"] {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: white;
+            color: black;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        h4 {
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #f0f0f0;
+        }
+
+        input[type="number"] {
+            width: 150px;
+        }
+
+        .rules-content {
+            margin-top: 20px;
+        }
+
+        .rules-content h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .rules-content ul {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .rules-content li {
+            margin-bottom: 8px;
+            padding-left: 10px;
+        }
+
+        .additional-rules {
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+        }
+
+        .rule-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rule-option input[type="checkbox"] {
             margin-right: 10px;
+        }
+
+        .rule-option label {
+            font-size: 13px;
+            line-height: 1.3;
         }
     </style>
 </head>
 <body>
-    <section>
-        <button id="stop">parar</button>
-        <button id="reset">resetar</button>
-    </section>
     <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <button id="stop">Pausar</button>
+        <button id="reset">Resetar</button>
+        <input type="number" id="quantidade" placeholder="Quantidade" min="1">
+        <button id="adicionar">Adicionar</button>
+        <button id="regras">Regras</button>
+    </div>
+
+    <div id="div_regras" class="rules-panel">
+        <div class="rules-content">
+            <h3>Regras da Simulação</h3>
+            <ul>
+                <li>• Cada elemento se move em direção aleatória</li>
+                <li>• Elementos colidem e se comem aleatoriamente</li>
+                <li>• Em empates, ambos permanecem</li>
+                <li>• Simulação continua até restar apenas um</li>
+            </ul>
+            
+            <div class="additional-rules">
+                <h4>Regras Adicionais</h4>
+                <div class="rule-option">
+                    <input type="checkbox" id="regra1">
+                    <label for="regra1">Elementos ficam mais rápidos ao vencer</label>
+                </div>
+                <div class="rule-option">
+                    <input type="checkbox" id="regra2">
+                    <label for="regra2">Elementos ficam maiores ao vencer</label>
+                </div>
+                <div class="rule-option">
+                    <input type="checkbox" id="regra3">
+                    <label for="regra3">Elementos ficam mais fortes ao vencer</label>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         const stopButton = document.getElementById('stop');
         const resetButton = document.getElementById('reset');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const adicionarButton = document.getElementById('adicionar');
+        const quantidadeInput = document.getElementById('quantidade');
+        const regrasButton = document.getElementById('regras');
+        const regra1Checkbox = document.getElementById('regra1');
+        const regra2Checkbox = document.getElementById('regra2');
+        const regra3Checkbox = document.getElementById('regra3');
+        let interval;
+        let mostrandoregras = false;
+        let pausado = false;
+        regrasButton.addEventListener('click', () => {
+            const divRegras = document.getElementById('div_regras');
+            divRegras.classList.toggle('open');
+            mostrandoregras = !mostrandoregras;
+        });
+        function adicionarElementos() {
+            const quantidade = parseInt(quantidadeInput.value);
+            if (elements.length !== 0) {
+                elements = [];
+            }
+            clearInterval(interval);
+            for (let i = 0; i < quantidade; i++) {
+                const elemento = {
+                    id: `Elemento ${elements.length + 1}`,
+                    name: `Elemento ${elements.length + 1}`,
+                    center: {
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height
+                    },
+                    raio: 20,
+                    angulo: Math.random() * 360,
+                    velocidade: 2.5,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    forca: 0
+                };
+                elements.push(elemento);
+            }
+            draw();
+            if (!pausado) {
+                interval = setInterval(draw, 1000 / 60);
+            }
+        }
+        adicionarButton.addEventListener('click', () => {
+            adicionarElementos();
+        });
+        quantidadeInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                adicionarElementos();
+            }
+        });
         ctx.canvas.width  = window.innerWidth;
         ctx.canvas.height = window.innerHeight;
-        const inicialx1 = Math.random() * (canvas.width - 0) + 0;
-        const inicialy1 = Math.random() * (canvas.height - 0) + 0;
-        const inicialx2 = Math.random() * (canvas.width - 0) + 0;
-        const inicialy2 = Math.random() * (canvas.height - 0) + 0;
-        let elements = [
-            {
-                vertices: [
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1},
-                    { x: inicialx1, y: inicialy1}
-                ],
-                color: 'rgba(255, 0, 0, 0.5)',
-                centercalcx: [],
-                centercalcy: [],
-                center: { x: 0, y: 0 }
-                
-             },
-             {
-                vertices: [
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2},
-                    { x: inicialx2, y: inicialy2}
-                ],
-                color: 'rgba(0, 0, 255, 0.5)',
-                centercalcx: [],
-                centercalcy: [],
-                center: { x: 0, y: 0 }
-             }
-        ];
+        let elements = [];
+        function interagir(element1, element2) {
+            let dado1 = (Math.floor(Math.random() * 100) + 1) + (element1.forca);
+            let dado2 = (Math.floor(Math.random() * 100) + 1) + (element2.forca);
+            if (dado1 > dado2) {
+                console.log(element1.id, 'venceu a interação contra', element2.id);
+                element1.angulo += 180;
+                elements = elements.filter(e => e !== element2);
+                if (regra1Checkbox.checked) {
+                    element1.velocidade += 0.5;
+                }
+                if (regra2Checkbox.checked) {
+                    element1.raio += 2;
+                }
+                if (regra3Checkbox.checked) {
+                    element1.forca = (element1.forca || 0) + 2;
+                }
+            } else if (dado2 > dado1) {
+                console.log(element2.id, 'venceu a interação contra', element1.id);
+                elements = elements.filter(e => e !== element1);
+                element2.angulo += 180;
+                if (regra1Checkbox.checked) {
+                    element2.velocidade += 0.5;
+                }
+                if (regra2Checkbox.checked) {
+                    element2.raio += 5;
+                }
+                if (regra3Checkbox.checked) {
+                    element2.forca = (element2.forca || 0) + 2;
+                }
+            } else {
+                console.log('empate entre', element1.id, 'e', element2.id);
+            }
+        }
         function draw() {
-            const basespeed = 5
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
             elements.forEach(element => {
                 ctx.fillStyle = element.color;
                 ctx.strokeStyle = "white";
-                ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(element.vertices[0].x, element.vertices[0].y);
-                for (let i = 1; i < element.vertices.length; i++) {
-                    ctx.lineTo(element.vertices[i].x, element.vertices[i].y);
-                }
-                ctx.closePath();
+                ctx.arc(element.center.x, element.center.y, element.raio, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
-                element.vertices.forEach(vertex => {
-                    ctx.beginPath();
-                    ctx.arc(vertex.x, vertex.y, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = "white";
-                    ctx.fill();
-                    ctx.closePath();
-                    if (vertex.x < element.center.x) {
-                        vertex.x -= Math.random() * (basespeed - -4) + -4;
-                    } else {
-                        vertex.x += Math.random() * (basespeed - -4) + -4;
-                    }
-                    if (vertex.y < element.center.y) {
-                        vertex.y -= Math.random() * (basespeed - -4) + -4;
-                    } else {
-                        vertex.y += Math.random() * (basespeed - -4) + -4;
-                    }
-                    if (vertex.x >= 0 || vertex.x <= canvas.width) {
-                        vertex.x = vertex.x;
-                    }
-                    if (vertex.y >= 0 || vertex.y <= canvas.height) {
-                        vertex.y = vertex.y;
-                    }
-                    element.centercalcx.push(vertex.x);
-                    element.centercalcy.push(vertex.y);
-                });
-                element.center.x = element.centercalcx.reduce((a, b) => a + b, 0) / element.centercalcx.length;
-                element.center.y = element.centercalcy.reduce((a, b) => a + b, 0) / element.centercalcy.length;
-                element.centercalcx = [];
-                element.centercalcy = [];
-                ctx.beginPath();
-                ctx.arc(element.center.x, element.center.y, 5, 0, Math.PI * 2);
-                ctx.fillStyle = "yellow";
-                ctx.fill();
                 ctx.closePath();
+                ctx.lineWidth = 5;
+
+                ctx.beginPath();
+                ctx.moveTo(element.center.x, element.center.y);
+                ctx.font = "18px Arial";
+                ctx.fillStyle = "white";
+                ctx.fillText(element.name, element.center.x - element.raio - 20, element.center.y - element.raio - 10);
+                ctx.closePath();
+
+                if (regra3Checkbox.checked) {
+                    ctx.beginPath();
+                    ctx.moveTo(element.center.x, element.center.y);
+                    ctx.font = "14px Arial";
+                    ctx.fillStyle = "white";
+                    ctx.fillText(`Força: ${element.forca}`, element.center.x - element.raio - 5, element.center.y + element.raio + 20);
+                    ctx.closePath();
+                }
+                
+                let anguloRad = element.angulo * (Math.PI / 180);
+                element.velocidadex = Math.cos(anguloRad) * 2.5;
+                element.velocidadey = Math.sin(anguloRad) * 2.5;
+                element.center.x += element.velocidadex;
+                element.center.y += element.velocidadey;
+
+                if (element.center.x >= canvas.width - element.raio) {
+                    element.center.x = canvas.width - element.raio;
+                    element.angulo = 180 - element.angulo;
+                }
+                if (element.center.x <= element.raio) {
+                    element.center.x = element.raio;
+                    element.angulo = 180 - element.angulo;
+                }
+                if (element.center.y >= canvas.height - element.raio) {
+                    element.center.y = canvas.height - element.raio;
+                    element.angulo = -element.angulo;
+                }
+                if (element.center.y <= element.raio) {
+                    element.center.y = element.raio;
+                    element.angulo = -element.angulo;
+                }
+                let elementosproximos = [];
+                for (let j = 0; j < elements.length; j++) {
+                    let elementopossivel = elements[j];
+                    if (elementopossivel === element) continue;
+                    const dx = element.center.x - elementopossivel.center.x;
+                    const dy = element.center.y - elementopossivel.center.y;
+                    elementosproximos.push({x: dx, y: dy, elemento: elementopossivel});
+                    if (elementosproximos.length === elements.length - 1) {
+                        for (let k = 0; k <= elements.length - 1; k++) {
+                            if (elements[k] === element) continue;
+                            const distancia = Math.sqrt((element.center.x - elements[k].center.x) ** 2 + (element.center.y - elements[k].center.y) ** 2);
+                            if (distancia <= element.raio + elements[k].raio) {
+                                interagir(element, elements[k]);
+                            }
+                        }
+                    }
+                }
             });
+            
         }
-        const interval = setInterval(draw, 1000 / 60);
         stopButton.addEventListener('click', () => {
-            clearInterval(interval);
+            if (!pausado) {
+                clearInterval(interval);
+                pausado = true;
+                stopButton.textContent = 'retomar';
+            } else {
+                interval = setInterval(draw, 1000 / 60);
+                pausado = false;
+                stopButton.textContent = 'pausar';
+            }
         });
         resetButton.addEventListener('click', () => {
-            elements.forEach(element => {
-                const inicialx = Math.random() * (canvas.width - 0) + 0;
-                const inicialy = Math.random() * (canvas.height - 0) + 0;
-                element.vertices.forEach(vertex => {
-                    vertex.x = inicialx;
-                    vertex.y = inicialy;
-                });
-            });
+            elements = [];
         });
+        if (elements.length === 1) {
+            clearInterval(interval);
+            console.log('Simulação encerrada. Elemento vencedor:', elements[0].id);
+        }
     </script>
 </body>
 </html>
