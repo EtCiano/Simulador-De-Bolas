@@ -28,7 +28,7 @@
             z-index: 1;
         }
 
-        .controls {
+        .controles {
             position: fixed;
             top: 10px;
             left: 10px;
@@ -38,7 +38,7 @@
             align-items: center;
         }
 
-        .rules-panel {
+        .panel {
             position: fixed;
             top: 0;
             right: 0;
@@ -52,12 +52,13 @@
             padding: 0;
         }
 
-        .rules-panel.open {
+        .panel.open {
             width: 350px;
             padding: 20px;
+            border-left: 2px solid black;
         }
 
-        button, input[type="number"] {
+        button, #quantidade{
             padding: 8px 12px;
             border: none;
             border-radius: 4px;
@@ -77,11 +78,11 @@
             width: 150px;
         }
 
-        .rules-content {
+        .rules-content, .config-content {
             margin-top: 20px;
         }
 
-        .rules-content h3 {
+        .rules-content h3, .config-content h3 {
             margin-bottom: 15px;
             text-align: center;
         }
@@ -115,20 +116,68 @@
             font-size: 13px;
             line-height: 1.3;
         }
+        .fechar_panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: rgb(0, 0, 0);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 20px;
+            line-height: 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .configs {
+            width: 100px;
+            margin-left: 10px;
+            border: 2px solid #acacac;
+            border-radius: 5px;
+            padding: 8px 12px;
+            background-color: white;
+            color: black;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .configs-individual {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .configs-individual input {
+            width: 150px;
+        }
+        #stop {
+            width: 85px;
+        }
+        .subtitulo {
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #555;
+        }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
     
-    <div class="controls">
+    <div class="controles">
         <button id="stop">Pausar</button>
         <button id="reset">Resetar</button>
-        <input type="number" id="quantidade" placeholder="Quantidade" min="1">
-        <button id="adicionar">Adicionar</button>
+        <input type="number" id="quantidade" placeholder="Quantidade" min="1" value="5">
+        <button id="adicionar">Executar</button>
         <button id="regras">Regras</button>
+        <button id="config">Configurações</button>
     </div>
 
-    <div id="div_regras" class="rules-panel">
+    <div id="div_regras" class="panel">
+        <button id="fechar_panel" class="fechar_panel">x</button>
         <div class="rules-content">
             <h3>Regras da Simulação</h3>
             <ul>
@@ -155,52 +204,75 @@
             </div>
         </div>
     </div>
+
+    <div id="div_config" class="panel">
+        <button id="fechar_panel" class="fechar_panel">x</button>
+        <div class="config-content">
+            <h3>Configurações</h3>
+            <p class="subtitulo">Aperte executar ou Enter para aplicar</p>
+            <div class="configs-individual">
+                <label for="config_velocidade">Velocidade Base</label><input type="number" id="config_velocidade" placeholder="Velocidade" class="configs" value="2.5" step="0.1">
+            </div>
+            <div class="configs-individual">
+                <label for="config_tamanho">Tamanho Base</label><input type="number" id="config_tamanho" placeholder="Tamanho" class="configs" value="20" step="1">
+            </div>
+            <div class="configs-individual">
+                <label for="config_debug">Modo Debug</label><input type="checkbox" id="config_debug">
+            </div>
+        </div>
+    </div>
+
     <script>
+
+        function loadSettings() {
+            document.querySelectorAll('input[type="checkbox"], input[type="number"]').forEach(input => {
+                const saved = localStorage.getItem(input.id);
+                if (saved !== null) {
+                    if (input.type === 'checkbox') {
+                        input.checked = saved === 'true';
+                    } else {
+                        input.value = saved;
+                    }
+                }
+            });
+        }
+        function saveSettings() {
+            document.querySelectorAll('input[type="checkbox"], input[type="number"]').forEach(input => {
+                localStorage.setItem(input.id, input.type === 'checkbox' ? input.checked : input.value);
+            });
+        }
+        document.addEventListener('change', (e) => {
+            if (e.target.matches('input[type="checkbox"], input[type="number"]')) {
+                saveSettings();
+            }
+        });
+        loadSettings();
+        
+        const body = document.body;
         const stopButton = document.getElementById('stop');
         const resetButton = document.getElementById('reset');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        ctx.canvas.width  = window.innerWidth;
+        ctx.canvas.height = window.innerHeight;
         const adicionarButton = document.getElementById('adicionar');
         const quantidadeInput = document.getElementById('quantidade');
         const regrasButton = document.getElementById('regras');
+        const configButton = document.getElementById('config');
         const regra1Checkbox = document.getElementById('regra1');
         const regra2Checkbox = document.getElementById('regra2');
         const regra3Checkbox = document.getElementById('regra3');
+        const divConfig = document.getElementById('div_config');
+        const divRegras = document.getElementById('div_regras');
+        const fecharPanels = document.querySelectorAll('.fechar_panel');
+        const configVelocidadeInput = document.getElementById('config_velocidade');
+        const configTamanhoInput = document.getElementById('config_tamanho');
+        const configDebugCheckbox = document.getElementById('config_debug');
+
         let interval;
-        let mostrandoregras = false;
         let pausado = false;
-        regrasButton.addEventListener('click', () => {
-            const divRegras = document.getElementById('div_regras');
-            divRegras.classList.toggle('open');
-            mostrandoregras = !mostrandoregras;
-        });
-        function adicionarElementos() {
-            const quantidade = parseInt(quantidadeInput.value);
-            if (elements.length !== 0) {
-                elements = [];
-            }
-            clearInterval(interval);
-            for (let i = 0; i < quantidade; i++) {
-                const elemento = {
-                    id: `Elemento ${elements.length + 1}`,
-                    name: `Elemento ${elements.length + 1}`,
-                    center: {
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height
-                    },
-                    raio: 20,
-                    angulo: Math.random() * 360,
-                    velocidade: 2.5,
-                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                    forca: 0
-                };
-                elements.push(elemento);
-            }
-            draw();
-            if (!pausado) {
-                interval = setInterval(draw, 1000 / 60);
-            }
-        }
+        let elements = [];
+
         adicionarButton.addEventListener('click', () => {
             adicionarElementos();
         });
@@ -209,16 +281,112 @@
                 event.preventDefault();
                 adicionarElementos();
             }
+            if (event.key === ' ') {
+                event.preventDefault();
+                togglePause();
+            }
         });
-        ctx.canvas.width  = window.innerWidth;
-        ctx.canvas.height = window.innerHeight;
-        let elements = [];
+        body.addEventListener('keydown', function(event) {
+            if (event.target.tagName === 'INPUT') return;
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                adicionarElementos();
+            }
+            if (event.key === ' ') {
+                event.preventDefault();
+                togglePause();
+            }
+        });
+        regrasButton.addEventListener('click', () => {
+            if (divConfig.classList.contains('open')) {
+                divConfig.classList.remove('open');
+            }
+            divRegras.classList.toggle('open');
+        });
+        configButton.addEventListener('click', () => {
+            if (divRegras.classList.contains('open')) {
+                divRegras.classList.remove('open');
+            }
+            divConfig.classList.toggle('open');
+        });
+        stopButton.addEventListener('click', () => {
+            togglePause();
+        });
+        resetButton.addEventListener('click', () => {
+            elements = [];
+        });
+        fecharPanels.forEach(button => {
+            button.addEventListener('click', () => {
+                button.parentElement.classList.remove('open');
+            });
+        });
+
+
+        function adicionarElementos() {
+        const quantidade = parseInt(quantidadeInput.value);
+            if (elements.length !== 0) {
+                elements = [];
+            }
+            clearInterval(interval);
+            
+            if (configDebugCheckbox.checked) {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(canvas.width, canvas.height) * 0.4;
+                
+                for (let i = 0; i < quantidade; i++) {
+                    const angle = (i / quantidade) * Math.PI * 2;
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius;
+                    const angleToCenter = Math.atan2(centerY - y, centerX - x) * (180 / Math.PI);
+                    const variation = (Math.random() - 0.5) * 60;
+                    
+                    const elemento = {
+                        id: `Elemento ${elements.length + 1}`,
+                        name: `Elemento ${elements.length + 1}`,
+                        center: { x, y },
+                        raio: parseFloat(configTamanhoInput.value),
+                        angulo: angleToCenter + variation,
+                        velocidade: parseFloat(configVelocidadeInput.value),
+                        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                        forca: 0
+                    };
+                    elements.push(elemento);
+                }
+            } else {
+                for (let i = 0; i < quantidade; i++) {
+                    const elemento = {
+                        id: `Elemento ${elements.length + 1}`,
+                        name: `Elemento ${elements.length + 1}`,
+                        center: {
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height
+                        },
+                        raio: parseFloat(configTamanhoInput.value),
+                        angulo: Math.random() * 360,
+                        velocidade: parseFloat(configVelocidadeInput.value),
+                        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                        forca: 0
+                    };
+                    elements.push(elemento);
+                }
+            }
+            
+            draw();
+            if (!pausado) {
+                interval = setInterval(draw, 1000 / 60);
+            }
+        }
         function interagir(element1, element2) {
             let dado1 = (Math.floor(Math.random() * 100) + 1) + (element1.forca);
             let dado2 = (Math.floor(Math.random() * 100) + 1) + (element2.forca);
+
             if (dado1 > dado2) {
-                console.log(element1.id, 'venceu a interação contra', element2.id);
-                element1.angulo += 180;
+                let dx = element1.center.x - element2.center.x;
+                let dy = element1.center.y - element2.center.y;
+                element1.angulo = Math.atan2(dy, dx) * (180 / Math.PI);
+                
                 elements = elements.filter(e => e !== element2);
                 if (regra1Checkbox.checked) {
                     element1.velocidade += 0.5;
@@ -229,10 +397,13 @@
                 if (regra3Checkbox.checked) {
                     element1.forca = (element1.forca || 0) + 2;
                 }
+
             } else if (dado2 > dado1) {
-                console.log(element2.id, 'venceu a interação contra', element1.id);
+                let dx = element2.center.x - element1.center.x;
+                let dy = element2.center.y - element1.center.y;
+                element2.angulo = Math.atan2(dy, dx) * (180 / Math.PI);
+                
                 elements = elements.filter(e => e !== element1);
-                element2.angulo += 180;
                 if (regra1Checkbox.checked) {
                     element2.velocidade += 0.5;
                 }
@@ -242,13 +413,11 @@
                 if (regra3Checkbox.checked) {
                     element2.forca = (element2.forca || 0) + 2;
                 }
-            } else {
-                console.log('empate entre', element1.id, 'e', element2.id);
             }
         }
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+            
             elements.forEach(element => {
                 ctx.fillStyle = element.color;
                 ctx.strokeStyle = "white";
@@ -276,8 +445,8 @@
                 }
                 
                 let anguloRad = element.angulo * (Math.PI / 180);
-                element.velocidadex = Math.cos(anguloRad) * 2.5;
-                element.velocidadey = Math.sin(anguloRad) * 2.5;
+                element.velocidadex = Math.cos(anguloRad) * element.velocidade;
+                element.velocidadey = Math.sin(anguloRad) * element.velocidade;
                 element.center.x += element.velocidadex;
                 element.center.y += element.velocidadey;
 
@@ -317,24 +486,21 @@
             });
             
         }
-        stopButton.addEventListener('click', () => {
-            if (!pausado) {
+        function togglePause() {
+            pausado = !pausado;
+            if (pausado) {
                 clearInterval(interval);
-                pausado = true;
-                stopButton.textContent = 'retomar';
+                stopButton.textContent = 'Continuar';
             } else {
                 interval = setInterval(draw, 1000 / 60);
-                pausado = false;
-                stopButton.textContent = 'pausar';
+                stopButton.textContent = 'Pausar';
             }
-        });
-        resetButton.addEventListener('click', () => {
-            elements = [];
-        });
+        }
         if (elements.length === 1) {
             clearInterval(interval);
             console.log('Simulação encerrada. Elemento vencedor:', elements[0].id);
         }
+
     </script>
 </body>
 </html>
