@@ -211,13 +211,19 @@
             <h3>Configurações</h3>
             <p class="subtitulo">Aperte executar ou Enter para aplicar</p>
             <div class="configs-individual">
-                <label for="config_velocidade">Velocidade Base</label><input type="number" id="config_velocidade" placeholder="Velocidade" class="configs" value="2.5" step="0.1">
+                <label for="config_velocidade">Velocidade Base:</label><input type="number" id="config_velocidade" placeholder="Velocidade" class="configs" value="2.5" step="0.1">
             </div>
             <div class="configs-individual">
-                <label for="config_tamanho">Tamanho Base</label><input type="number" id="config_tamanho" placeholder="Tamanho" class="configs" value="20" step="1">
+                <label for="config_tamanho">Tamanho Base:</label><input type="number" id="config_tamanho" placeholder="Tamanho" class="configs" value="20" step="1">
             </div>
             <div class="configs-individual">
-                <label for="config_debug">Modo Debug</label><input type="checkbox" id="config_debug">
+                <label for="config_debug">Modo Debug:</label><input type="checkbox" id="config_debug">
+            </div>
+            <div class="configs-individual">
+                <label for="config_marcacao">Mostrar elemento número:</label><input type="number" id="config_marcacao" placeholder="Número do Elemento" class="configs" step="1">
+            </div>
+            <div class="configs-individual">
+                <label for="config_nome">Mostrar nome:</label><input type="checkbox" id="config_nome">
             </div>
         </div>
     </div>
@@ -268,6 +274,8 @@
         const configVelocidadeInput = document.getElementById('config_velocidade');
         const configTamanhoInput = document.getElementById('config_tamanho');
         const configDebugCheckbox = document.getElementById('config_debug');
+        const configMarcacaoInput = document.getElementById('config_marcacao');
+        const configNomeCheckbox = document.getElementById('config_nome');
 
         let interval;
         let pausado = false;
@@ -343,7 +351,7 @@
                     const variation = (Math.random() - 0.5) * 60;
                     
                     const elemento = {
-                        id: `Elemento ${elements.length + 1}`,
+                        id: elements.length + 1,
                         name: `Elemento ${elements.length + 1}`,
                         center: { x, y },
                         raio: parseFloat(configTamanhoInput.value),
@@ -357,7 +365,7 @@
             } else {
                 for (let i = 0; i < quantidade; i++) {
                     const elemento = {
-                        id: `Elemento ${elements.length + 1}`,
+                        id: elements.length + 1,
                         name: `Elemento ${elements.length + 1}`,
                         center: {
                             x: Math.random() * canvas.width,
@@ -428,12 +436,14 @@
                 ctx.closePath();
                 ctx.lineWidth = 5;
 
-                ctx.beginPath();
-                ctx.moveTo(element.center.x, element.center.y);
-                ctx.font = "18px Arial";
-                ctx.fillStyle = "white";
-                ctx.fillText(element.name, element.center.x - element.raio - 20, element.center.y - element.raio - 10);
-                ctx.closePath();
+                if (configNomeCheckbox.checked) {
+                    ctx.beginPath();
+                    ctx.moveTo(element.center.x, element.center.y);
+                    ctx.font = "18px Arial";
+                    ctx.fillStyle = "white";
+                    ctx.fillText(element.name, element.center.x - element.raio - 20, element.center.y - element.raio - 10);
+                    ctx.closePath();
+                }
 
                 if (regra3Checkbox.checked) {
                     ctx.beginPath();
@@ -442,6 +452,18 @@
                     ctx.fillStyle = "white";
                     ctx.fillText(`Força: ${element.forca}`, element.center.x - element.raio - 5, element.center.y + element.raio + 20);
                     ctx.closePath();
+                }
+                if (configMarcacaoInput.value && parseInt(configMarcacaoInput.value) === element.id) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = "red";
+                    ctx.fillStyle = "red";
+                    ctx.moveTo(element.center.x, element.center.y + element.raio - 90);
+                    ctx.lineTo(element.center.x + 20, element.center.y + element.raio - 110);
+                    ctx.lineTo(element.center.x - 20, element.center.y + element.raio - 110);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.lineWidth = 5;
+                    ctx.stroke();
                 }
                 
                 let anguloRad = element.angulo * (Math.PI / 180);
@@ -498,7 +520,6 @@
         }
         if (elements.length === 1) {
             clearInterval(interval);
-            console.log('Simulação encerrada. Elemento vencedor:', elements[0].id);
         }
 
     </script>
